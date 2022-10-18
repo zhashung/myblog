@@ -45,7 +45,7 @@ The distortion-free projective transformation given by a pinhole camera model is
 
 在针孔相机模型中，无畸变的投影变换如下所示。
 
-$$[s \; p = A \begin{bmatrix} R|t \end{bmatrix} P_w],$$
+$$s \; p = A \begin{bmatrix} R|t \end{bmatrix} P_w,$$
 
 where $P_w$ is a 3D point expressed with respect to the world coordinate system, $p$ is a 2D pixel in the image plane, $A$ is the intrinsic camera matrix, $R$ and $t$ are the rotation and translation that describe the change of coordinates from world to camera coordinate systems (or camera frame) and $s$ is the projective transformation's arbitrary scaling and not part of the camera model.
 
@@ -151,7 +151,7 @@ The following figure illustrates the pinhole camera model.
 
 如下图描述了针孔相机模型
 
-![Pinhole camera model](asset\images\pinhole_camera_model.png)
+![Pinhole camera model](..\asset\images\pinhole_camera_model.png)
 
 ## 相机畸变模型
 Real lenses usually have some distortion, mostly radial distortion, and slight tangential distortion. So, the above model is extended as:
@@ -188,8 +188,8 @@ The next figures show two common types of radial distortion: barrel distortion (
 
 如下两张图像分别展示了两种常见方式的径向畸变：桶形畸变 (当$1 + k_1 r^2 + k_2 r^4 + k_3 r^6$ 单点递减) 枕型畸变 (当$1 + k_1 r^2 + k_2 r^4 + k_3 r^6$ 单调递增)。对于实际的镜头，径向畸变往往是单调的。如估算得到了非单调的结果，应该被视为标定失败。更一般的说，径向畸变必须是单调的而且畸变函数必须是bijective的。一个失败的估算结果可能在图像中心附近表现良好，但是在AR/SFM等应用时则很糟糕。在OpenCV的相机标定中实现的优化方法并不包括该项约束，因为框架不支持integer programming和polynomial inequalities。在[issue #15992](https://github.com/opencv/opencv/issues/15992)中查看更多信息。
 
-![](asset\images\distortion_examples.png)
-![](asset\images\distortion_examples2.png)
+![](..\asset\images\distortion_examples.png)
+![](..\asset\images\distortion_examples2.png)
 
 In some cases, the image sensor may be tilted in order to focus an oblique plane in front of the camera (Scheimpflug principle). This can be useful for particle image velocimetry (PIV) or triangulation with a laser fan. The tilt causes a perspective distortion of $x''$ and $y''$. This distortion can be modeled in the following way, see e.g. @cite Louhichi07.
 
