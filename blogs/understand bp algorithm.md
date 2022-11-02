@@ -118,7 +118,7 @@ $$
 
 我们可以生成如下图的图形化表示，该图称为计算图（Computational Graphs，是链式法则的一种图形化表示。
 
-<Zoom> <img alt="计算图" src={useBaseUrl('img/blog/computational_graph_for_bp.png')} /> </Zoom>
+![](../asset/images/computational_graph_for_bp.png)
 
 对于求解$\frac{\partial e}{\partial a}$，我们可以看到a只通过影响c最终影响e的结果，即只有一条a->c->e一条路径。因此：
 
