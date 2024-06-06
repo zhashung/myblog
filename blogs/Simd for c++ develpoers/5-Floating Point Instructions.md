@@ -3,12 +3,12 @@
 #### Arithmetic
 Most of them are available in all-lane versions, and single lane version which only compute single lane result, and copy the rest of the lanes from the first arguments.
 
-指令集支持针对all-lane的多数arithmetic，也有只计算single-lane的指令，这些指令只计算一个lane然后从第一个参数复制其他lanes。
+指令集支持对all-lane的多数arithmetic，也有只计算single-lane的指令，这些指令只计算一个lane然后从第一个参数复制其他lanes。
 
 ##### Traditional
 All 4 basic operations are implemented, add, subtract, multiply, divide. Square root instruction is also there, even for 64-bit floats.
 
-所有的四则运算都有对应实现，包括add、subtract、multiply、divide。square root指令也是支持的，甚至对于64-bit floats的所有计算。
+所有的四则运算都有对应指令，包括add、subtract、multiply、divide。square root指令也是支持的，甚至所有计算支持64-bit floats。
 
 ##### Unorthodox
 The CPU has minimum and maximum instructions. More often than not, modern compilers compile standard library functions `std::min<float>` / `std::max<double>` into `_mm_min_ss` / `_mm_max_sd`.
@@ -29,7 +29,7 @@ SSE3指令集中一对指令分别实现了交替add和subtract。`_mm_addsub_ps
 
 SSE 4.1 includes dot product instruction, which take 2 vector registers and also 8-bit constant. It uses higher 4 bits of the constant to compute dot product of some lanes of the inputs, then lower 4 bits of the constant to broadcast the result.
 
-SSE4.1指令集中包含了dot product指令，加载2个向量寄存器和一个8bit的常量。使用这个常量的高4bits决定计算哪些lanes参与dot product，使用这个常量的低4bit决定broadcast（具体使用如下）。
+SSE4.1指令集中包含了dot product指令，加载2个向量寄存器和一个8bit的常量。使用这个常量的高4bits决定计算哪些lanes参与dot product，使用这个常量的低4bit决定broadcast。
 
 For instance, when SSE 4.1 is enabled, `XMVector3Dot` library function compiles into single instruction, this one: `_mm_dp_ps( a, b, 0b01111111 )` The bits in the constant mean “compute dot product of the first 3 lanes ignoring what’s in the highest ones, and broadcast the resulting scalar value into all 4 lanes of the output register”. The lanes for which the store bit is zero will be set to 0.0f.
 
@@ -37,7 +37,7 @@ For instance, when SSE 4.1 is enabled, `XMVector3Dot` library function compiles 
 
 SSE 4.1 has introduced rounding instructions for both sizes of floats. For 32-bit floats, the all-lanes version is exposed in C++ as `_mm_round_ps`, `_mm_ceil_ps`, and `_mm_floor_ps` intrinsics. For AVX, Intel neglected to implement proper ceil/round intrinsics, they only exposed `_mm256_round_ps` and `_mm256_round_pd` which take extra integer constant specifying rounding mode. Use `_MM_FROUND_NINT` constant to round to nearest integer(More specifically, processors do bankers' rounding: when the fraction is exactly 0.5, the output will be nearest even number. This way 0.5 is rounded to 0, while 1.5 becomes 2), `_MM_FROUND_FLOOR` to round towards negative infinity, `_MM_FROUND_CEIL` to round towards positive infinity, or `_MM_FROUND_TRUNC` to round towards zero.
 
-SSE4.1指令集为32/64bits的floats引入了rounding指令。c++中处理32bit floats、all-lanes版本的指令为`_mm_round_ps`、`_mm_ceil_ps`和`_mm_floor_ps`。在AVX中，Intel不区分ceil/round指令，只有`_mm256_round_ps`和`_mm256_round_pd`，使用一个interger常量指定rounding模式。`_MM_FROUND_NINT`表示round到最近的interger（更具体地说，处理器使用branker rounding模式， 当小数部分恰好是0.5时，结果更靠近偶数，使用这种rounding，0.5将round为0，1.5将round为2），`_MM_FROUND_FLOOR`表示round到负无穷. `_MM_FROUND_CEIL`表示round到正无穷，`_MM_FROUND_TRUNC`表示round到0。
+SSE4.1指令集为32/64bits的floats引入了rounding指令。c++中处理32bit floats、all-lanes的指令为`_mm_round_ps`、`_mm_ceil_ps`和`_mm_floor_ps`。在AVX中，Intel不区分ceil/round指令，只有`_mm256_round_ps`和`_mm256_round_pd`，使用一个interger常量指定rounding模式。`_MM_FROUND_NINT`表示round到最近的interger（更具体地说，处理器使用branker rounding模式， 当小数部分恰好是0.5时，结果更靠近偶数，使用这种rounding，0.5将round为0，1.5将round为2），`_MM_FROUND_FLOOR`表示round到负无穷. `_MM_FROUND_CEIL`表示round到正无穷，`_MM_FROUND_TRUNC`表示round到0。
 
 ##### Missing
 Unlike NEON, there’s no SSE instructions for unary minus or absolute value. The fastest way is bitwise tricks, specifically `_mm_xor_ps`( x, `_mm_set1_ps`( -0.0f ) ) for unary minus, `_mm_andnot_ps`( `_mm_set1_ps( -0.0f )`, x ) for absolute value. The reason these tricks work, -0.0f float value only has the sign bit set, the rest of the bits are 0, so `_mm_xor_ps` flips the sign and `_mm_andnot_ps` clears the sign bit making the value non-negative.
@@ -46,7 +46,7 @@ Unlike NEON, there’s no SSE instructions for unary minus or absolute value. Th
 
 There’s no logarithm nor exponent, and no trigonometry either. Intel’s documentation says otherwise, because Intel were writing their documentation for their C++ compiler, which implements them in its standard library. You can fall back to scalar code, or better search the web for the implementation. It’s not terribly complex, e.g. trigonometric functions are usually implemented as high-degree minmax polynomial approximation. For single-precision floats you can use XMVectorSin/XMVectorCos/etc. from DirectXMath, for FP64 use the coefficients from GeometricTools.
 
-没有实现logarithm、exponent和trigonometry的指令。Intel文档中有是因为文档本身是为Intel自家编译器编写的，因此Intel在自己的c++编译器的标准库中集成了这些指令。你可以使用标量代码，或者在网络上找到更好的实现。这并不复杂，比如trigonometric函数经常使用高阶极大极小多项式逼近来实现。对于单精度floats可以使用[DirectXMath](https://github.com/microsoft/DirectXMath)中的XMVectorSin/XMVectorCos。对于FP64可以使用中的GeometricTools[https://github.com/davideberly/GeometricTools/blob/GTE-version-5.9/GTE/Mathematics/SinEstimate.h]。
+Intel没有实现logarithm、exponent和trigonometry的指令。Intel文档中有是因为文档本身是为Intel自家编译器编写的，因此Intel在自己的c++编译器的标准库中集成了这些指令。你可以使用标量代码，或者在网络上找到更好的实现。这并不复杂，比如trigonometric函数经常使用高阶极大极小多项式逼近来实现。对于单精度floats可以使用[DirectXMath](https://github.com/microsoft/DirectXMath)中的XMVectorSin/XMVectorCos。对于FP64可以使用DirectXMath中的GeometricTools[https://github.com/davideberly/GeometricTools/blob/GTE-version-5.9/GTE/Mathematics/SinEstimate.h]。
 
 #### Comparisons
 There’re all-lanes versions of equality comparison and the rest of them, <, >, ≤, ≥, ≠. These versions return another float register, that’s either all zeros 0.0f, or all ones. A float with all ones is a `NAN`.
@@ -55,7 +55,7 @@ There’re all-lanes versions of equality comparison and the rest of them, <, >,
 
 You can send the result from SIMD to a general-purpose CPU register with `_mm_movemask_ps`, `_mm_movemask_pd` or the corresponding AVX 1 equivalents. These instructions gather most significant bits of each float/double lane (that bit happen to be the sign bit, by the way), pack these bits into a scalar, and copy to a general-purpose CPU register. The following code prints 15:
 
-你可以将`_mm_movemask_ps`、`_mm_movemask_pd`或者AVX1指令集中近似的指令将结果从向量寄存器传递给通用寄存器。这些指令gather每一个float/double lane的最高有效位（通常是符号位），将结果传递给一个通用寄存器。如下代码将输出15：
+你可以使用`_mm_movemask_ps`、`_mm_movemask_pd`或者AVX1指令集中近似的指令将某种计算结果从向量寄存器传递给通用寄存器。计算方法位gather每一个float/double lane的最高有效位（通常是符号位），将结果传递给一个通用寄存器。如下代码将输出15：
 
 ```c++
 const __m128 zero = _mm_setzero_ps();
@@ -138,7 +138,7 @@ I’m too lazy to draw similar block diagrams for `__m128d`, `__m256`, and `__m2
 
 As for the 32-byte AVX versions, the corresponding AVX instructions only shuffle/permute within 16-bit halves of the register. Here’s from documentation of `_mm256_shuffle_ps`: Shuffle single-precision (32-bit) floating-point elements in "a" within 128-bit lanes.
 
-对于AVX指令集中32byte的shuffles，对应的AVX指令只能shuffle/permute within 16-bit halves of the register。`_mm256_shuffle_ps`文档中写道：“a”中的一个32bit float只能在128bit lanes中shuffle。
+对于AVX指令集中32byte的shuffles，对应的AVX指令只能分别shuffle/permute整个寄存器的各一半16字节。`_mm256_shuffle_ps`文档中写道：“a”中的一个32bit float只能在128bit lanes中shuffle。
 
 However, there’re also some new AVX2 shuffle instruction which can cross 16-byte lanes.
 
@@ -159,7 +159,7 @@ However, there’re also some new AVX2 shuffle instruction which can cross 16-by
 ##### Variable Run Time Shuffles
 SSE 4.1 introduced `_mm_blendv_ps` instruction. It takes 3 arguments, uses sign bit of the mask to select lanes from A or B.
 
-SSE4.1指令集中引入了`_mm_blendv_ps` 指令。它有三个参数，根据mask中的各lanes的符号位从A或者B中的lanes选择。
+SSE4.1指令集中引入了`_mm_blendv_ps` 指令。它有三个参数，根据mask中的各lanes的符号位从A或者B中的lanes二选一。
 
 No version of SSE has float shuffling instructions controllable in runtime. The closest one is `_mm_shuffle_epi8` from SSSE3, see the corresponding section under integer instructions. If you really need that, you can cast registers to integer type, use `_mm_shuffle_epi8`, then cast back(But beware of bypass delays between integer and floating-point domains. On some old CPUs the latency can be up to 2 cycles. For more info, see section 13.6 “Using vector instructions with other types of data than they are intended for” of “Optimizing subroutines in assembly language” article.).
 
@@ -184,7 +184,7 @@ FMA指令需要3个参数a、b、c，每一个参数是32或64bit的float，然�
 
 Modern CPUs implement 8-wide FMA for 32-bit floats, `_mm256_fmadd_ps` intrinsic in C++, and 4-wide FMA for 64-bit floats, `_mm256_fmadd_pd` intrinsics. There’re versions which subtract instead of adding, flip sign of the product before adding. There’re even versions which alternately add or subtract, computing $( a · b ) + c$ for even lanes $( a · b ) − c$ for odd ones, or doing the opposite. It was probably added for complex numbers multiplication.
 
-现代CPU添加`_mm256_fmadd_ps`指令实现32bit float的8-wide FMA，`_mm256_fmadd_pd`指令实现64bit floats的4-wide FMA。另外一些指令在add之前，flip乘法结果的符号位，即表示subtract。有的指令在even lanes计算$( a · b ) + c$，在odd lanes计算$( a · b ) − c$，或者相反。这大概是为了复数multiplication添加的。
+现代CPU添加`_mm256_fmadd_ps`指令实现32bit float的8-wide FMA，`_mm256_fmadd_pd`指令实现64bit floats的4-wide FMA。另外一些指令在add之前，反转乘法结果的符号位，即表示subtract。有的指令在偶数lanes计算$( a · b ) + c$，在奇数lanes计算$( a · b ) − c$，或者相反。这大概是为了复数multiplication添加的。
 
 There’re versions twice as narrow operating on 16-byte registers, 4-wide 32-bit floats FMA, and 2-wide 64-bit floats FMA.
 

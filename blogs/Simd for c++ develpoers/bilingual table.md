@@ -2,6 +2,7 @@
 | ----------- | ------------------------------------------- | ---------------------- |
 | instruction |                                             | 指令                   |
 | register    | general-purpose register                    | 通用寄存器             |
+|             | library routine                             | 库程序                 |
 | constant    |                                             | 常量                   |
 | predicate   | comparison predicate                        | 比较谓词               |
 |             | shift amount                                | 位移量                 |
